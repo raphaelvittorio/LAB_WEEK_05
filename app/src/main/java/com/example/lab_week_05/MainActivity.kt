@@ -2,11 +2,7 @@ package com.example.lab_week_05
 
 import ImageLoader
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import android.annotation.SuppressLint
 import android.util.Log
 import android.widget.ImageView
 import android.widget.TextView
@@ -16,22 +12,21 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
-import retrofit2.converter.scalars.ScalarsConverterFactory
-
 
 class MainActivity : AppCompatActivity() {
 
-    private val retrofit by lazy{
+    private val retrofit by lazy {
         Retrofit.Builder()
             .baseUrl("https://api.thecatapi.com/v1/")
             .addConverterFactory(MoshiConverterFactory.create())
             .build()
     }
-    private val catApiService by lazy{
+
+    private val catApiService by lazy {
         retrofit.create(CatApiService::class.java)
     }
 
-    private val apiResponseView: TextView by lazy{
+    private val apiResponseView: TextView by lazy {
         findViewById(R.id.api_response)
     }
 
@@ -43,45 +38,47 @@ class MainActivity : AppCompatActivity() {
         GlideLoader(this)
     }
 
-
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         getCatImageResponse()
     }
+
     private fun getCatImageResponse() {
         val call = catApiService.searchImages(1, "full")
-        call.enqueue(object: Callback<List<ImageData>> {
+        call.enqueue(object : Callback<List<ImageData>> {
             override fun onFailure(call: Call<List<ImageData>>, t: Throwable) {
                 Log.e(MAIN_ACTIVITY, "Failed to get response", t)
             }
-            override fun onResponse(call: Call<List<ImageData>>, response:
-            Response<List<ImageData>>) {
-                if(response.isSuccessful){
-                    val image = response.body()
-                    val firstImage = image?.firstOrNull()?.imageUrl.orEmpty()
-                    if (firstImage.isNotBlank()) {
-                        imageLoader.loadImage(firstImage, imageResultView)
+
+            override fun onResponse(
+                call: Call<List<ImageData>>,
+                response: Response<List<ImageData>>
+            ) {
+                if (response.isSuccessful) {
+                    val image = response.body()?.firstOrNull()
+
+                    val imageUrl = image?.imageUrl.orEmpty()
+                    if (imageUrl.isNotBlank()) {
+                        imageLoader.loadImage(imageUrl, imageResultView)
                     } else {
                         Log.d(MAIN_ACTIVITY, "Missing image URL")
                     }
-                    apiResponseView.text = getString(R.string.image_placeholder,
-                        firstImage)
-                }
-                else{
-                    Log.e(MAIN_ACTIVITY, "Failed to get response\n" +
-                            response.errorBody()?.string().orEmpty()
+
+                    val breedName = image?.breeds?.firstOrNull()?.name ?: "Cat Breed: Unknown"
+                    apiResponseView.text = breedName
+
+                } else {
+                    Log.e(
+                        MAIN_ACTIVITY,
+                        "Failed to get response\n${response.errorBody()?.string().orEmpty()}"
                     )
                 }
             }
         })
     }
 
-
-    companion object{
+    companion object {
         const val MAIN_ACTIVITY = "MAIN_ACTIVITY"
     }
 }
-
